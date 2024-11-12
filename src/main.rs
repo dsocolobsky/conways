@@ -50,17 +50,33 @@ fn set_dead(grid: &mut Grid, x: usize, y: usize) {
     set_state(grid, x, y, CellState::Dead);
 }
 
-fn neighbours(grid: &Grid, x: usize, y: usize) -> [Option<CellState>; 8] {
-    [
-        get_state(&grid, x, y - 1),
-        get_state(&grid, x, y + 1),
-        get_state(&grid, x - 1, y),
-        get_state(&grid, x + 1, y),
-        get_state(&grid, x - 1, y - 1),
-        get_state(&grid, x - 1, y + 1),
-        get_state(&grid, x + 1, y - 1),
-        get_state(&grid, x + 1, y + 1),
-    ]
+fn neighbours(grid: &Grid, x: usize, y: usize) -> Vec<Option<CellState>> {
+    let mut vec: Vec<Option<CellState>> = vec![];
+    if x > 0 {
+        vec.push(get_state(&grid, x - 1, y));
+        if y > 0 {
+            vec.push(get_state(&grid, x - 1, y - 1));
+        }
+        if y < 255 {
+            vec.push(get_state(&grid, x - 1, y + 1));
+        }
+    }
+    if x < 255 {
+        vec.push(get_state(&grid, x + 1, y));
+        if y > 0 {
+            vec.push(get_state(&grid, x + 1, y - 1));
+        }
+        if y < 255 {
+            vec.push(get_state(&grid, x + 1, y + 1));
+        }
+    }
+    if y > 0 {
+        vec.push(get_state(&grid, x, y - 1));
+    }
+    if y < 255 {
+        vec.push(get_state(&grid, x, y + 1));
+    }
+    vec
 }
 
 fn alive_neighbours(grid: &Grid, x: usize, y: usize) -> usize {
@@ -113,7 +129,7 @@ fn create_initial_grid(alive: Vec<(usize, usize)>) -> Grid {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut grid: Grid = create_initial_grid(vec![(4, 4), (10, 10)]);
+    let mut grid: Grid = create_initial_grid(vec![(5, 5), (6, 6), (7, 4), (7, 5), (7, 6)]);
 
     loop {
         clear_background(DARKGRAY);
