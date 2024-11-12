@@ -129,12 +129,15 @@ fn create_initial_grid(alive: Vec<(usize, usize)>) -> Grid {
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    let mut last_update = get_time();
+    let speed = 0.3;
     let mut grid: Grid = create_initial_grid(vec![(5, 5), (6, 6), (7, 4), (7, 5), (7, 6)]);
 
     loop {
         clear_background(DARKGRAY);
 
-        if is_key_released(KeyCode::Space) {
+        if get_time() - last_update > speed {
+            last_update = get_time();
             grid = next_state_for_grid(&grid);
         }
 
