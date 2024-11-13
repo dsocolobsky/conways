@@ -30,39 +30,30 @@ pub fn cell_is_alive(grid: &Grid, x: usize, y: usize) -> bool {
     }
 }
 
-fn neighbours(grid: &Grid, x: usize, y: usize) -> Vec<Option<CellState>> {
-    let mut vec: Vec<Option<CellState>> = vec![];
-    if x > 0 {
-        vec.push(get_cell_state(&grid, x - 1, y));
-        if y > 0 {
-            vec.push(get_cell_state(&grid, x - 1, y - 1));
-        }
-        if y < 255 {
-            vec.push(get_cell_state(&grid, x - 1, y + 1));
-        }
-    }
-    if x < 255 {
-        vec.push(get_cell_state(&grid, x + 1, y));
-        if y > 0 {
-            vec.push(get_cell_state(&grid, x + 1, y - 1));
-        }
-        if y < 255 {
-            vec.push(get_cell_state(&grid, x + 1, y + 1));
-        }
-    }
-    if y > 0 {
-        vec.push(get_cell_state(&grid, x, y - 1));
-    }
-    if y < 255 {
-        vec.push(get_cell_state(&grid, x, y + 1));
-    }
-    vec
+fn neighbours(grid: &Grid, x: usize, y: usize) -> Vec<CellState> {
+    let offsets: [(isize, isize); 8] = [
+        (0, -1),
+        (0, 1),
+        (1, -1),
+        (1, 0),
+        (1, 1),
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+    ];
+    offsets
+        .iter()
+        .filter_map(|(ox, oy)| {
+            let nx = (x as isize + *ox) as usize;
+            let ny = (y as isize + *oy) as usize;
+            get_cell_state(&grid, nx, ny)
+        })
+        .collect()
 }
 
 fn alive_neighbours(grid: &Grid, x: usize, y: usize) -> usize {
     neighbours(grid, x, y)
         .into_iter()
-        .flatten()
         .filter(|state| *state == CellState::Alive)
         .count()
 }
