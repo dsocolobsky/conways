@@ -4,8 +4,11 @@ This is an implementation of [Conway's Game of Life](https://en.wikipedia.org/wi
 written in Rust with the [macroquad](https://macroquad.rs) crate.
 
 ## Running
+
 * Clone the repository `git clone git@github.com:dsocolobsky/conways.git`
 * Run `cargo run`
 
 ## Implemented Features
+
 * Barebones project structure and window display.
+* Conway's Game of Life in a 32x32 grid.
