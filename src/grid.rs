@@ -32,7 +32,7 @@ pub fn cell_is_alive(grid: &Grid, x: usize, y: usize) -> bool {
     }
 }
 
-fn neighbours(grid: &Grid, x: usize, y: usize) -> Vec<CellState> {
+fn neighbour_positions(x: usize, y: usize) -> Vec<(usize, usize)> {
     let offsets: [(isize, isize); 8] = [
         (0, -1),
         (0, 1),
@@ -48,16 +48,21 @@ fn neighbours(grid: &Grid, x: usize, y: usize) -> Vec<CellState> {
         .filter_map(|(ox, oy)| {
             let nx = (x as isize + *ox) as usize;
             let ny = (y as isize + *oy) as usize;
-            get_cell_state(&grid, nx, ny)
+            if valid_coordinate(nx, ny) {
+                Some((nx, ny))
+            } else {
+                None
+            }
         })
         .collect()
 }
 
 fn alive_neighbours(grid: &Grid, x: usize, y: usize) -> usize {
-    neighbours(grid, x, y)
+    let n = neighbour_positions(x, y)
         .into_iter()
-        .filter(|state| *state == CellState::Alive)
-        .count()
+        .filter(|(nx, ny)| cell_is_alive(&grid, *nx, *ny));
+
+    n.count()
 }
 
 fn next_state_for_cell(grid: &Grid, x: usize, y: usize) -> CellState {
@@ -99,22 +104,26 @@ pub fn create_grid(alive: Vec<(usize, usize)>) -> Grid {
 }
 
 pub fn create_random_grid() -> Grid {
-    let mut positions: Vec<(usize, usize)> = vec![];
     let num_alive = rand::gen_range(8, 200);
-    for _ in (0..num_alive) {
-        let row = rand::gen_range(0, GRID_WIDTH);
-        let col = rand::gen_range(0, GRID_HEIGHT);
-        positions.push((row, col));
-    }
+    let positions = (0..num_alive) // Generate #num_alive random positions in grid
+        .map(|_| {
+            (
+                rand::gen_range(0, GRID_WIDTH),
+                rand::gen_range(0, GRID_HEIGHT),
+            )
+        })
+        .collect();
     create_grid(positions)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::grid::{cell_is_alive, create_grid, next_state_for_grid, CellState};
+    use crate::grid::{
+        alive_neighbours, cell_is_alive, create_grid, next_state_for_grid, CellState,
+    };
 
     #[test]
-    fn create_grid() {
+    fn grid_with_one_cell() {
         let grid = create_grid(vec![(5, 5)]);
         for (i, &row) in grid.iter().enumerate() {
             for (j, &cell) in row.iter().enumerate() {
@@ -125,6 +134,12 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn cell_at_corner() {
+        let grid = create_grid(vec![(0, 0), (0, 1), (1, 0)]);
+        assert_eq!(alive_neighbours(&grid, 0, 0), 2);
     }
 
     #[test]
