@@ -3,6 +3,9 @@ mod grid;
 use crate::grid::{CellState, Grid};
 use macroquad::prelude::*;
 
+const SLOW_SPEED: f64 = 0.3;
+const FAST_SPEED: f64 = 0.05;
+
 fn window_conf() -> Conf {
     Conf {
         window_title: String::from("Conways"),
@@ -16,8 +19,8 @@ fn window_conf() -> Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut last_update = get_time();
-    let speed = 0.3;
-    let mut grid: Grid = grid::create_initial_grid(vec![
+    let mut speed = SLOW_SPEED;
+    let mut grid: Grid = grid::create_grid(vec![
         (5, 5),
         (6, 6),
         (7, 4),
@@ -28,8 +31,23 @@ async fn main() {
         (14, 12), // Stick
     ]);
 
-    loop {
+    let mut running = true;
+    while running {
         clear_background(DARKGRAY);
+
+        if is_key_pressed(KeyCode::Space) {
+            speed = FAST_SPEED;
+        } else if is_key_released(KeyCode::Space) {
+            speed = SLOW_SPEED;
+        }
+
+        if is_key_pressed(KeyCode::N) {
+            grid = grid::create_random_grid()
+        }
+
+        if is_key_pressed(KeyCode::Escape) {
+            running = false;
+        }
 
         if get_time() - last_update > speed {
             last_update = get_time();
@@ -53,6 +71,10 @@ async fn main() {
                 );
             }
         }
+
+        draw_text("Hold SPACE to advance speed", 20.0, 20.0, 30.0, RED);
+        draw_text("Press N to randomize", 430.0, 20.0, 30.0, RED);
+        draw_text("Press ESC to exit", 800.0, 20.0, 30.0, RED);
         next_frame().await
     }
 }
