@@ -1,3 +1,5 @@
+use macroquad::rand;
+
 pub const GRID_WIDTH: usize = 32;
 pub const GRID_HEIGHT: usize = 32;
 pub const CELL_SIZE: f32 = 30.0;
@@ -88,7 +90,7 @@ pub fn next_state_for_grid(grid: &Grid) -> Grid {
     new_grid
 }
 
-pub fn create_initial_grid(alive: Vec<(usize, usize)>) -> Grid {
+pub fn create_grid(alive: Vec<(usize, usize)>) -> Grid {
     let mut new_grid: Grid = [[CellState::Dead; GRID_WIDTH]; GRID_HEIGHT];
     for (i, j) in alive {
         new_grid[i][j] = CellState::Alive;
@@ -96,13 +98,24 @@ pub fn create_initial_grid(alive: Vec<(usize, usize)>) -> Grid {
     new_grid
 }
 
+pub fn create_random_grid() -> Grid {
+    let mut positions: Vec<(usize, usize)> = vec![];
+    let num_alive = rand::gen_range(8, 200);
+    for _ in (0..num_alive) {
+        let row = rand::gen_range(0, GRID_WIDTH);
+        let col = rand::gen_range(0, GRID_HEIGHT);
+        positions.push((row, col));
+    }
+    create_grid(positions)
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::grid::{cell_is_alive, create_initial_grid, next_state_for_grid, CellState};
+    use crate::grid::{cell_is_alive, create_grid, next_state_for_grid, CellState};
 
     #[test]
     fn create_grid() {
-        let grid = create_initial_grid(vec![(5, 5)]);
+        let grid = create_grid(vec![(5, 5)]);
         for (i, &row) in grid.iter().enumerate() {
             for (j, &cell) in row.iter().enumerate() {
                 if i == 5 && j == 5 {
@@ -116,7 +129,7 @@ mod tests {
 
     #[test]
     fn cell_dies_of_underpopulation() {
-        let grid = create_initial_grid(vec![(5, 5)]);
+        let grid = create_grid(vec![(5, 5)]);
         assert!(cell_is_alive(&grid, 5, 5));
         let grid = next_state_for_grid(&grid);
         assert!(!cell_is_alive(&grid, 5, 5));
@@ -124,7 +137,7 @@ mod tests {
 
     #[test]
     fn cell_dies_of_overpopulation() {
-        let grid = create_initial_grid(vec![(5, 5), (5, 6), (5, 4), (4, 5), (6, 6)]);
+        let grid = create_grid(vec![(5, 5), (5, 6), (5, 4), (4, 5), (6, 6)]);
         assert!(cell_is_alive(&grid, 5, 5));
         let grid = next_state_for_grid(&grid);
         assert!(!cell_is_alive(&grid, 5, 5));
@@ -132,7 +145,7 @@ mod tests {
 
     #[test]
     fn cell_survives() {
-        let grid = create_initial_grid(vec![(5, 5), (5, 6), (5, 4)]);
+        let grid = create_grid(vec![(5, 5), (5, 6), (5, 4)]);
         assert!(cell_is_alive(&grid, 5, 5));
         let grid = next_state_for_grid(&grid);
         assert!(cell_is_alive(&grid, 5, 5));
@@ -140,7 +153,7 @@ mod tests {
 
     #[test]
     fn blinker_pattern() {
-        let grid = create_initial_grid(vec![(5, 5), (5, 6), (5, 7)]);
+        let grid = create_grid(vec![(5, 5), (5, 6), (5, 7)]);
         assert!(cell_is_alive(&grid, 5, 5));
         assert!(cell_is_alive(&grid, 5, 6));
         assert!(cell_is_alive(&grid, 5, 7));
