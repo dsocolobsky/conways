@@ -33,27 +33,27 @@ async fn main() {
 
     let mut running = true;
     while running {
-        clear_background(DARKGRAY);
-
+        // Handle Input
         if is_key_pressed(KeyCode::Space) {
             speed = FAST_SPEED;
         } else if is_key_released(KeyCode::Space) {
             speed = SLOW_SPEED;
         }
-
         if is_key_pressed(KeyCode::N) {
             grid = grid::create_random_grid()
         }
-
         if is_key_pressed(KeyCode::Escape) {
             running = false;
         }
 
-        if get_time() - last_update > speed {
-            last_update = get_time();
-            grid = grid::next_state_for_grid(&grid);
+        // Check if we should redraw/recalculate grid
+        if get_time() - last_update < speed {
+            continue;
         }
+        last_update = get_time();
 
+        grid = grid::next_state_for_grid(&grid);
+        clear_background(DARKGRAY);
         for (i, row) in grid.iter().enumerate() {
             for (j, _) in row.iter().enumerate() {
                 let color = if cell_is_alive(&grid, i, j) {
