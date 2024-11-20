@@ -6,6 +6,9 @@ use macroquad::prelude::*;
 const SLOW_SPEED: f64 = 0.3;
 const FAST_SPEED: f64 = 0.05;
 
+const DEFAULT_GRID_WIDTH: usize = 32;
+const DEFAULT_GRID_HEIGHT: usize = 64;
+
 fn window_conf() -> Conf {
     Conf {
         window_title: String::from("Conways"),
@@ -20,16 +23,20 @@ fn window_conf() -> Conf {
 async fn main() {
     let mut last_update = get_time();
     let mut speed = SLOW_SPEED;
-    let mut grid: Grid = grid::create_grid(vec![
-        (5, 5),
-        (6, 6),
-        (7, 4),
-        (7, 5),
-        (7, 6), // Glider
-        (12, 12),
-        (13, 12),
-        (14, 12), // Stick
-    ]);
+    let mut grid: Grid = grid::create_grid(
+        32,
+        32,
+        vec![
+            (5, 5),
+            (6, 6),
+            (7, 4),
+            (7, 5),
+            (7, 6), // Glider
+            (12, 12),
+            (13, 12),
+            (14, 12), // Stick
+        ],
+    );
 
     let mut running = true;
     while running {
@@ -40,7 +47,7 @@ async fn main() {
             speed = SLOW_SPEED;
         }
         if is_key_pressed(KeyCode::N) {
-            grid = grid::create_random_grid()
+            grid = grid::create_random_grid(DEFAULT_GRID_WIDTH, DEFAULT_GRID_HEIGHT)
         }
         if is_key_pressed(KeyCode::Escape) {
             running = false;
