@@ -18,11 +18,9 @@ fn valid_coordinate(grid: &Grid, row: usize, col: usize) -> bool {
 }
 
 pub fn get_cell_state(grid: &Grid, x: usize, y: usize) -> CellState {
-    if valid_coordinate(grid, x, y) {
-        grid[x][y]
-    } else {
-        CellState::Dead
-    }
+    grid.get(x)
+        .and_then(|row| row.get(y))
+        .map_or(CellState::Dead, |s| *s)
 }
 
 pub fn cell_is_alive(grid: &Grid, x: usize, y: usize) -> bool {
