@@ -57,7 +57,7 @@ fn neighbour_positions(x: usize, y: usize) -> Vec<(usize, usize)> {
 fn alive_neighbours(grid: &Grid, x: usize, y: usize) -> usize {
     let n = neighbour_positions(x, y)
         .into_iter()
-        .filter(|(nx, ny)| cell_is_alive(&grid, *nx, *ny));
+        .filter(|(nx, ny)| cell_is_alive(grid, *nx, *ny));
 
     n.count()
 }
@@ -66,17 +66,15 @@ fn next_state_for_cell(grid: &Grid, x: usize, y: usize) -> CellState {
     let currently_alive = cell_is_alive(grid, x, y);
     let neighbours = alive_neighbours(grid, x, y);
     if currently_alive {
-        if neighbours < 2 || neighbours > 3 {
-            CellState::Dead
-        } else {
+        if (2..=3).contains(&neighbours) {
             CellState::Alive
+        } else {
+            CellState::Dead
         }
+    } else if neighbours == 3 {
+        CellState::Alive
     } else {
-        if neighbours == 3 {
-            CellState::Alive
-        } else {
-            CellState::Dead
-        }
+        CellState::Dead
     }
 }
 
