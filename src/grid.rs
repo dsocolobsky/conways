@@ -17,19 +17,16 @@ fn valid_coordinate(x: usize, y: usize) -> bool {
     x < GRID_WIDTH && y < GRID_HEIGHT
 }
 
-pub fn get_cell_state(grid: &Grid, x: usize, y: usize) -> Option<CellState> {
+pub fn get_cell_state(grid: &Grid, x: usize, y: usize) -> CellState {
     if valid_coordinate(x, y) {
-        Some(grid[x][y])
+        grid[x][y]
     } else {
-        None
+        CellState::Dead
     }
 }
 
 pub fn cell_is_alive(grid: &Grid, x: usize, y: usize) -> bool {
-    match get_cell_state(grid, x, y) {
-        Some(state) => state == CellState::Alive,
-        _ => false,
-    }
+    get_cell_state(grid, x, y) == CellState::Alive
 }
 
 fn neighbour_positions(x: usize, y: usize) -> Vec<(usize, usize)> {

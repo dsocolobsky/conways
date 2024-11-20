@@ -1,6 +1,6 @@
 mod grid;
 
-use crate::grid::{CellState, Grid};
+use crate::grid::{cell_is_alive, Grid};
 use macroquad::prelude::*;
 
 const SLOW_SPEED: f64 = 0.3;
@@ -56,8 +56,7 @@ async fn main() {
 
         for (i, row) in grid.iter().enumerate() {
             for (j, _) in row.iter().enumerate() {
-                let state = grid::get_cell_state(&grid, i, j).unwrap_or_default();
-                let color = if state == CellState::Alive {
+                let color = if cell_is_alive(&grid, i, j) {
                     YELLOW
                 } else {
                     LIGHTGRAY
