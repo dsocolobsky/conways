@@ -4,9 +4,8 @@ pub const GRID_WIDTH: usize = 32;
 pub const GRID_HEIGHT: usize = 32;
 pub const CELL_SIZE: f32 = 30.0;
 
-#[derive(Copy, Clone, PartialEq, Default, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum CellState {
-    #[default]
     Dead,
     Alive,
 }
