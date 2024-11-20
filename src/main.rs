@@ -27,8 +27,8 @@ async fn main() {
     let mut last_update = get_time();
     let mut speed = SLOW_SPEED;
     let mut grid: Grid = grid::create_grid(
-        32,
-        32,
+        DEFAULT_GRID_WIDTH,
+        DEFAULT_GRID_HEIGHT,
         vec![
             (5, 5),
             (6, 6),
@@ -80,10 +80,10 @@ async fn main() {
                     LIGHTGRAY
                 };
                 draw_rectangle(
-                    (cell_width * i as f32) as f32,
-                    (cell_width * j as f32) as f32,
-                    cell_width,
-                    cell_width,
+                    cell_width * i as f32,
+                    cell_width * j as f32,
+                    cell_size,
+                    cell_size,
                     color,
                 );
             }
