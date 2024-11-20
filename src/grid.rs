@@ -13,7 +13,7 @@ pub enum CellState {
 pub type Grid = Vec<Vec<CellState>>;
 
 fn valid_coordinate(grid: &Grid, row: usize, col: usize) -> bool {
-    let (height, width) = (grid.len(), grid[0].len());
+    let (width, height) = dimensions(grid);
     row < height && col < width
 }
 
@@ -79,7 +79,7 @@ fn next_state_for_cell(grid: &Grid, x: usize, y: usize) -> CellState {
 }
 
 pub fn next_state_for_grid(grid: &Grid) -> Grid {
-    let (height, width) = (grid.len(), grid[0].len());
+    let (width, height) = dimensions(grid);
     let mut new_grid: Grid = vec![vec![CellState::Dead; width]; height];
 
     for (i, row) in grid.iter().enumerate() {
@@ -100,11 +100,17 @@ pub fn create_grid(width: usize, height: usize, alive: Vec<(usize, usize)>) -> G
 }
 
 pub fn create_random_grid(width: usize, height: usize) -> Grid {
-    let num_alive = rand::gen_range(8, 200);
+    let lower_lim = width * height / 30;
+    let upper_lim = width * height / 2;
+    let num_alive = rand::gen_range(lower_lim, upper_lim);
     let positions = (0..num_alive) // Generate #num_alive random positions in grid
         .map(|_| (rand::gen_range(0, height), rand::gen_range(0, width)))
         .collect();
     create_grid(width, height, positions)
+}
+
+pub fn dimensions(grid: &Grid) -> (usize, usize) {
+    (grid[0].len(), grid.len())
 }
 
 #[cfg(test)]
