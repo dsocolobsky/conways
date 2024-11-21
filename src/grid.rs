@@ -49,7 +49,8 @@ impl Conways {
         self.grid
             .get(x)
             .and_then(|row| row.get(y))
-            .map_or(CellState::Dead, |s| *s)
+            .copied()
+            .unwrap_or(CellState::Dead)
     }
 
     pub fn cell_is_alive(&self, x: usize, y: usize) -> bool {
