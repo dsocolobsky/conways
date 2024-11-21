@@ -11,7 +11,7 @@ pub struct Conways {
 }
 
 impl Conways {
-    pub(crate) fn new(width: usize, height: usize, alive: Vec<(usize, usize)>) -> Self {
+    pub fn new(width: usize, height: usize, alive: Vec<(usize, usize)>) -> Self {
         let mut conways = Self {
             grid: vec![vec![CellState::Dead; width]; height],
         };
@@ -45,7 +45,7 @@ impl Conways {
         row < height && col < width
     }
 
-    pub fn get_cell_state(&self, x: usize, y: usize) -> CellState {
+    fn get_cell_state(&self, x: usize, y: usize) -> CellState {
         self.grid
             .get(x)
             .and_then(|row| row.get(y))
@@ -94,16 +94,11 @@ impl Conways {
     fn next_state_for_cell(&self, x: usize, y: usize) -> CellState {
         let currently_alive = self.cell_is_alive(x, y);
         let neighbours = self.alive_neighbours(x, y);
-        if currently_alive {
-            if (2..=3).contains(&neighbours) {
-                CellState::Alive
-            } else {
-                CellState::Dead
-            }
-        } else if neighbours == 3 {
-            CellState::Alive
-        } else {
-            CellState::Dead
+        match (currently_alive, neighbours) {
+            (true, 2..=3) => CellState::Alive,
+            (true, _) => CellState::Dead,
+            (false, 3) => CellState::Alive,
+            _ => CellState::Dead,
         }
     }
 
