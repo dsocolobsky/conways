@@ -1,6 +1,6 @@
 mod grid;
 
-use crate::grid::{cell_is_alive, dimensions, Grid};
+use crate::grid::Conways;
 use macroquad::prelude::*;
 
 const SLOW_SPEED: f64 = 0.3;
@@ -26,7 +26,7 @@ fn window_conf() -> Conf {
 async fn main() {
     let mut last_update = get_time();
     let mut speed = SLOW_SPEED;
-    let mut grid: Grid = grid::create_grid(
+    let mut game = Conways::new(
         DEFAULT_GRID_WIDTH,
         DEFAULT_GRID_HEIGHT,
         vec![
@@ -60,21 +60,21 @@ async fn main() {
         }
         last_update = get_time();
 
-        let (grid_height, grid_width) = dimensions(&grid);
+        let (grid_height, grid_width) = game.dimensions();
         if is_key_pressed(KeyCode::N) {
-            grid = grid::create_random_grid((grid_width - 1).max(6), (grid_height - 1).max(6))
+            game.set_to_random_grid((grid_width - 1).max(6), (grid_height - 1).max(6))
         } else if is_key_pressed(KeyCode::M) {
-            grid = grid::create_random_grid(grid_width + 1, grid_height + 1)
+            game.set_to_random_grid(grid_width + 1, grid_height + 1)
         }
 
-        grid = grid::next_state_for_grid(&grid);
+        game.advance_state();
         clear_background(DARKGRAY);
         let cell_width = SCREEN_WIDTH as f32 / grid_width as f32;
         let cell_height = SCREEN_HEIGHT as f32 / grid_height as f32;
         let cell_size = cell_width.min(cell_height);
-        for (i, row) in grid.iter().enumerate() {
+        for (i, row) in game.grid.iter().enumerate() {
             for (j, _) in row.iter().enumerate() {
-                let color = if cell_is_alive(&grid, i, j) {
+                let color = if game.cell_is_alive(i, j) {
                     YELLOW
                 } else {
                     LIGHTGRAY
