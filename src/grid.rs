@@ -1,131 +1,145 @@
 use macroquad::rand;
 
-pub const GRID_WIDTH: usize = 32;
-pub const GRID_HEIGHT: usize = 32;
-pub const CELL_SIZE: f32 = 30.0;
-
-#[derive(Copy, Clone, PartialEq, Default, Debug)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum CellState {
-    #[default]
     Dead,
     Alive,
 }
 
-pub type Grid = [[CellState; GRID_WIDTH]; GRID_HEIGHT];
-
-fn valid_coordinate(x: usize, y: usize) -> bool {
-    x < GRID_WIDTH && y < GRID_HEIGHT
+pub struct Conways {
+    pub(crate) grid: Vec<Vec<CellState>>,
 }
 
-pub fn get_cell_state(grid: &Grid, x: usize, y: usize) -> Option<CellState> {
-    if valid_coordinate(x, y) {
-        Some(grid[x][y])
-    } else {
-        None
+impl Conways {
+    pub fn new(width: usize, height: usize, alive: Vec<(usize, usize)>) -> Self {
+        let mut conways = Self {
+            grid: vec![vec![CellState::Dead; width]; height],
+        };
+        for (i, j) in alive {
+            conways.grid[i][j] = CellState::Alive;
+        }
+        conways
     }
-}
 
-pub fn cell_is_alive(grid: &Grid, x: usize, y: usize) -> bool {
-    match get_cell_state(grid, x, y) {
-        Some(state) => state == CellState::Alive,
-        _ => false,
+    fn set_cells_to(&mut self, width: usize, height: usize, alive: Vec<(usize, usize)>) {
+        let mut grid = vec![vec![CellState::Dead; width]; height];
+        for (i, j) in alive {
+            grid[i][j] = CellState::Alive;
+        }
+        self.grid = grid;
     }
-}
 
-fn neighbour_positions(x: usize, y: usize) -> Vec<(usize, usize)> {
-    let offsets: [(isize, isize); 8] = [
-        (0, -1),
-        (0, 1),
-        (1, -1),
-        (1, 0),
-        (1, 1),
-        (-1, -1),
-        (-1, 0),
-        (-1, 1),
-    ];
-    offsets
-        .iter()
-        .filter_map(|(ox, oy)| {
-            let nx = (x as isize + *ox) as usize;
-            let ny = (y as isize + *oy) as usize;
-            if valid_coordinate(nx, ny) {
-                Some((nx, ny))
-            } else {
-                None
+    pub fn set_to_random_grid(&mut self, width: usize, height: usize) {
+        let lower_lim = width * height / 30;
+        let upper_lim = width * height / 2;
+        let num_alive = rand::gen_range(lower_lim, upper_lim);
+        let positions =
+            (0..num_alive) // Generate #num_alive random positions in grid
+                .map(|_| (rand::gen_range(0, height), rand::gen_range(0, width)))
+                .collect();
+        self.set_cells_to(width, height, positions);
+    }
+
+    fn valid_coordinate(&self, row: usize, col: usize) -> bool {
+        let (width, height) = self.dimensions();
+        row < height && col < width
+    }
+
+    fn get_cell_state(&self, x: usize, y: usize) -> CellState {
+        self.grid
+            .get(x)
+            .and_then(|row| row.get(y))
+            .copied()
+            .unwrap_or(CellState::Dead)
+    }
+
+    pub fn cell_is_alive(&self, x: usize, y: usize) -> bool {
+        self.get_cell_state(x, y) == CellState::Alive
+    }
+
+    fn neighbour_positions(&self, x: usize, y: usize) -> Vec<(usize, usize)> {
+        let offsets: [(isize, isize); 8] = [
+            (0, -1),
+            (0, 1),
+            (1, -1),
+            (1, 0),
+            (1, 1),
+            (-1, -1),
+            (-1, 0),
+            (-1, 1),
+        ];
+        offsets
+            .iter()
+            .filter_map(|(ox, oy)| {
+                let nx = (x as isize + *ox) as usize;
+                let ny = (y as isize + *oy) as usize;
+                if self.valid_coordinate(nx, ny) {
+                    Some((nx, ny))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    fn alive_neighbours(&self, x: usize, y: usize) -> usize {
+        let n = self
+            .neighbour_positions(x, y)
+            .into_iter()
+            .filter(|(nx, ny)| self.cell_is_alive(*nx, *ny));
+
+        n.count()
+    }
+
+    fn next_state_for_cell(&self, x: usize, y: usize) -> CellState {
+        let currently_alive = self.cell_is_alive(x, y);
+        let neighbours = self.alive_neighbours(x, y);
+        match (currently_alive, neighbours) {
+            (true, 2..=3) => CellState::Alive,
+            (true, _) => CellState::Dead,
+            (false, 3) => CellState::Alive,
+            _ => CellState::Dead,
+        }
+    }
+
+    pub fn advance_state(&mut self) {
+        let (width, height) = self.dimensions();
+        let mut new_grid = vec![vec![CellState::Dead; width]; height];
+
+        for (i, row) in self.grid.iter().enumerate() {
+            for (j, _) in row.iter().enumerate() {
+                new_grid[i][j] = self.next_state_for_cell(i, j);
             }
-        })
-        .collect()
-}
-
-fn alive_neighbours(grid: &Grid, x: usize, y: usize) -> usize {
-    let n = neighbour_positions(x, y)
-        .into_iter()
-        .filter(|(nx, ny)| cell_is_alive(&grid, *nx, *ny));
-
-    n.count()
-}
-
-fn next_state_for_cell(grid: &Grid, x: usize, y: usize) -> CellState {
-    let currently_alive = cell_is_alive(grid, x, y);
-    let neighbours = alive_neighbours(grid, x, y);
-    if currently_alive {
-        if neighbours < 2 || neighbours > 3 {
-            CellState::Dead
-        } else {
-            CellState::Alive
         }
-    } else {
-        if neighbours == 3 {
-            CellState::Alive
-        } else {
-            CellState::Dead
-        }
-    }
-}
 
-pub fn next_state_for_grid(grid: &Grid) -> Grid {
-    let mut new_grid: Grid = [[CellState::Dead; GRID_WIDTH]; GRID_HEIGHT];
-
-    for (i, row) in grid.iter().enumerate() {
-        for (j, _) in row.iter().enumerate() {
-            new_grid[i][j] = next_state_for_cell(grid, i, j);
-        }
+        self.grid = new_grid;
     }
 
-    new_grid
-}
-
-pub fn create_grid(alive: Vec<(usize, usize)>) -> Grid {
-    let mut new_grid: Grid = [[CellState::Dead; GRID_WIDTH]; GRID_HEIGHT];
-    for (i, j) in alive {
-        new_grid[i][j] = CellState::Alive;
+    pub fn dimensions(&self) -> (usize, usize) {
+        (self.grid[0].len(), self.grid.len())
     }
-    new_grid
-}
-
-pub fn create_random_grid() -> Grid {
-    let num_alive = rand::gen_range(8, 200);
-    let positions = (0..num_alive) // Generate #num_alive random positions in grid
-        .map(|_| {
-            (
-                rand::gen_range(0, GRID_WIDTH),
-                rand::gen_range(0, GRID_HEIGHT),
-            )
-        })
-        .collect();
-    create_grid(positions)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::grid::{
-        alive_neighbours, cell_is_alive, create_grid, next_state_for_grid, CellState,
-    };
+    use super::*;
+
+    #[test]
+    fn test_grid_dimensions() {
+        let mut game = Conways::new(32, 16, vec![]);
+        assert_eq!((32, 16), game.dimensions());
+
+        game.advance_state();
+        assert_eq!((32, 16), game.dimensions());
+
+        game.set_to_random_grid(42, 42);
+        assert_eq!((42, 42), game.dimensions());
+    }
 
     #[test]
     fn grid_with_one_cell() {
-        let grid = create_grid(vec![(5, 5)]);
-        for (i, &row) in grid.iter().enumerate() {
+        let game = Conways::new(32, 32, vec![(5, 5)]);
+        for (i, &ref row) in game.grid.iter().enumerate() {
             for (j, &cell) in row.iter().enumerate() {
                 if i == 5 && j == 5 {
                     assert_eq!(cell, CellState::Alive)
@@ -138,55 +152,55 @@ mod tests {
 
     #[test]
     fn cell_at_corner() {
-        let grid = create_grid(vec![(0, 0), (0, 1), (1, 0)]);
-        assert_eq!(alive_neighbours(&grid, 0, 0), 2);
+        let game = Conways::new(32, 32, vec![(0, 0), (0, 1), (1, 0)]);
+        assert_eq!(game.alive_neighbours(0, 0), 2);
     }
 
     #[test]
     fn cell_dies_of_underpopulation() {
-        let grid = create_grid(vec![(5, 5)]);
-        assert!(cell_is_alive(&grid, 5, 5));
-        let grid = next_state_for_grid(&grid);
-        assert!(!cell_is_alive(&grid, 5, 5));
+        let mut game = Conways::new(32, 32, vec![(5, 5)]);
+        assert!(game.cell_is_alive(5, 5));
+        game.advance_state();
+        assert!(!game.cell_is_alive(5, 5));
     }
 
     #[test]
     fn cell_dies_of_overpopulation() {
-        let grid = create_grid(vec![(5, 5), (5, 6), (5, 4), (4, 5), (6, 6)]);
-        assert!(cell_is_alive(&grid, 5, 5));
-        let grid = next_state_for_grid(&grid);
-        assert!(!cell_is_alive(&grid, 5, 5));
+        let mut game = Conways::new(32, 32, vec![(5, 5), (5, 6), (5, 4), (4, 5), (6, 6)]);
+        assert!(game.cell_is_alive(5, 5));
+        game.advance_state();
+        assert!(!game.cell_is_alive(5, 5));
     }
 
     #[test]
     fn cell_survives() {
-        let grid = create_grid(vec![(5, 5), (5, 6), (5, 4)]);
-        assert!(cell_is_alive(&grid, 5, 5));
-        let grid = next_state_for_grid(&grid);
-        assert!(cell_is_alive(&grid, 5, 5));
+        let mut game = Conways::new(32, 32, vec![(5, 5), (5, 6), (5, 4)]);
+        assert!(game.cell_is_alive(5, 5));
+        game.advance_state();
+        assert!(game.cell_is_alive(5, 5));
     }
 
     #[test]
     fn blinker_pattern() {
-        let grid = create_grid(vec![(5, 5), (5, 6), (5, 7)]);
-        assert!(cell_is_alive(&grid, 5, 5));
-        assert!(cell_is_alive(&grid, 5, 6));
-        assert!(cell_is_alive(&grid, 5, 7));
+        let mut game = Conways::new(32, 32, vec![(5, 5), (5, 6), (5, 7)]);
+        assert!(game.cell_is_alive(5, 5));
+        assert!(game.cell_is_alive(5, 6));
+        assert!(game.cell_is_alive(5, 7));
 
-        let grid = next_state_for_grid(&grid);
-        assert!(cell_is_alive(&grid, 4, 6));
-        assert!(cell_is_alive(&grid, 5, 6));
-        assert!(cell_is_alive(&grid, 6, 6));
+        game.advance_state();
+        assert!(game.cell_is_alive(4, 6));
+        assert!(game.cell_is_alive(5, 6));
+        assert!(game.cell_is_alive(6, 6));
 
-        assert!(!cell_is_alive(&grid, 5, 5));
-        assert!(!cell_is_alive(&grid, 5, 7));
+        assert!(!game.cell_is_alive(5, 5));
+        assert!(!game.cell_is_alive(5, 7));
 
-        let grid = next_state_for_grid(&grid);
-        assert!(cell_is_alive(&grid, 5, 5));
-        assert!(cell_is_alive(&grid, 5, 6));
-        assert!(cell_is_alive(&grid, 5, 7));
+        game.advance_state();
+        assert!(game.cell_is_alive(5, 5));
+        assert!(game.cell_is_alive(5, 6));
+        assert!(game.cell_is_alive(5, 7));
 
-        assert!(!cell_is_alive(&grid, 4, 6));
-        assert!(!cell_is_alive(&grid, 6, 6));
+        assert!(!game.cell_is_alive(4, 6));
+        assert!(!game.cell_is_alive(6, 6));
     }
 }

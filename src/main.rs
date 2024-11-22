@@ -1,16 +1,22 @@
 mod grid;
 
-use crate::grid::{CellState, Grid};
+use crate::grid::Conways;
 use macroquad::prelude::*;
 
 const SLOW_SPEED: f64 = 0.3;
 const FAST_SPEED: f64 = 0.05;
 
+const DEFAULT_GRID_WIDTH: usize = 32;
+const DEFAULT_GRID_HEIGHT: usize = 32;
+
+const SCREEN_WIDTH: i32 = 1024;
+const SCREEN_HEIGHT: i32 = 1024;
+
 fn window_conf() -> Conf {
     Conf {
         window_title: String::from("Conways"),
-        window_width: 1024,
-        window_height: 1024,
+        window_width: SCREEN_WIDTH,
+        window_height: SCREEN_HEIGHT,
         fullscreen: false,
         ..Default::default()
     }
@@ -20,60 +26,71 @@ fn window_conf() -> Conf {
 async fn main() {
     let mut last_update = get_time();
     let mut speed = SLOW_SPEED;
-    let mut grid: Grid = grid::create_grid(vec![
-        (5, 5),
-        (6, 6),
-        (7, 4),
-        (7, 5),
-        (7, 6), // Glider
-        (12, 12),
-        (13, 12),
-        (14, 12), // Stick
-    ]);
+    let mut game = Conways::new(
+        DEFAULT_GRID_WIDTH,
+        DEFAULT_GRID_HEIGHT,
+        vec![
+            (5, 5),
+            (6, 6),
+            (7, 4),
+            (7, 5),
+            (7, 6), // Glider
+            (12, 12),
+            (13, 12),
+            (14, 12), // Stick
+        ],
+    );
 
     let mut running = true;
     while running {
-        clear_background(DARKGRAY);
-
+        // Handle Input
         if is_key_pressed(KeyCode::Space) {
             speed = FAST_SPEED;
         } else if is_key_released(KeyCode::Space) {
             speed = SLOW_SPEED;
         }
 
-        if is_key_pressed(KeyCode::N) {
-            grid = grid::create_random_grid()
-        }
-
         if is_key_pressed(KeyCode::Escape) {
             running = false;
         }
 
-        if get_time() - last_update > speed {
-            last_update = get_time();
-            grid = grid::next_state_for_grid(&grid);
+        // Check if we should redraw/recalculate grid
+        if get_time() - last_update < speed {
+            continue;
+        }
+        last_update = get_time();
+
+        let (grid_height, grid_width) = game.dimensions();
+        if is_key_pressed(KeyCode::N) {
+            game.set_to_random_grid((grid_width - 1).max(6), (grid_height - 1).max(6))
+        } else if is_key_pressed(KeyCode::M) {
+            game.set_to_random_grid(grid_width + 1, grid_height + 1)
         }
 
-        for (i, row) in grid.iter().enumerate() {
+        game.advance_state();
+        clear_background(DARKGRAY);
+        let cell_width = SCREEN_WIDTH as f32 / grid_width as f32;
+        let cell_height = SCREEN_HEIGHT as f32 / grid_height as f32;
+        let cell_size = cell_width.min(cell_height);
+        for (i, row) in game.grid.iter().enumerate() {
             for (j, _) in row.iter().enumerate() {
-                let state = grid::get_cell_state(&grid, i, j).unwrap_or_default();
-                let color = if state == CellState::Alive {
+                let color = if game.cell_is_alive(i, j) {
                     YELLOW
                 } else {
                     LIGHTGRAY
                 };
                 draw_rectangle(
-                    (grid::GRID_WIDTH * i) as f32,
-                    (grid::GRID_HEIGHT * j) as f32,
-                    grid::CELL_SIZE,
-                    grid::CELL_SIZE,
+                    cell_width * i as f32,
+                    cell_width * j as f32,
+                    cell_size,
+                    cell_size,
                     color,
                 );
             }
         }
 
         draw_text("Hold SPACE to advance speed", 20.0, 20.0, 30.0, RED);
-        draw_text("Press N to randomize", 430.0, 20.0, 30.0, RED);
+        draw_text("Press N/M to randomize", 430.0, 20.0, 30.0, RED);
         draw_text("Press ESC to exit", 800.0, 20.0, 30.0, RED);
         next_frame().await
     }
