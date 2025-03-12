@@ -8,7 +8,7 @@ written in Rust with the [macroquad](https://macroquad.rs) crate.
 ## Running
 
 * Clone the repository `git clone git@github.com:dsocolobsky/conways.git && cd conways`
-* Run `make run`
+* Execute `make run`
 
 ## Implemented Features
 
